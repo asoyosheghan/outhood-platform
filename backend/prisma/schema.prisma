@@ -1,0 +1,405 @@
+// Outhood — Prisma Schema
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────
+
+enum UserRole {
+  GUEST
+  MEMBER
+  VOLUNTEER
+  ORGANIZER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum MembershipStatus {
+  NONE
+  PENDING
+  ACTIVE
+  EXPIRED
+}
+
+enum EventCategory {
+  ROAD_TRIP
+  SOCIAL
+  CORPORATE
+  COMMUNITY
+  CHARITY
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  ATTENDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum CampaignStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+}
+
+enum PaymentMethod {
+  MPESA
+  CARD
+  BANK_TRANSFER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum PortfolioCategory {
+  EVENTS
+  ROAD_TRIPS
+  CHARITY
+  COMMUNITY
+}
+
+enum ResourceType {
+  PDF
+  GUIDE
+  TEMPLATE
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  RESPONDED
+}
+
+enum NotificationType {
+  EVENT
+  DONATION
+  SYSTEM
+  COMMUNITY
+}
+
+// ──────────────────────────────────────────────
+// Core: Users & Auth
+// ──────────────────────────────────────────────
+
+model User {
+  id               String            @id @default(uuid())
+  firstName        String
+  lastName         String
+  email            String            @unique
+  passwordHash     String
+  phone            String?
+  avatarUrl        String?
+  bio              String?
+  county           String?
+  role             UserRole          @default(MEMBER)
+  membershipStatus MembershipStatus  @default(ACTIVE)
+  emailVerifiedAt  DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  registrations      EventRegistration[]
+  donations           Donation[]
+  blogPosts            BlogPost[]
+  notifications        Notification[]
+  refreshTokens        RefreshToken[]
+  communityApplications CommunityApplication[] @relation("CommunityApplicant")
+  createdEvents        Event[]              @relation("EventCreator")
+  createdCampaigns     Campaign[]           @relation("CampaignCreator")
+  reviewedApplications CommunityApplication[] @relation("ApplicationReviewer")
+
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ──────────────────────────────────────────────
+// Events & Registrations
+// ──────────────────────────────────────────────
+
+model Event {
+  id          String        @id @default(uuid())
+  slug        String        @unique
+  title       String
+  category    EventCategory
+  summary     String
+  description String
+  coverImage  String
+  location    String
+  startDate   DateTime
+  endDate     DateTime?
+  priceKes    Int?
+  capacity    Int
+  featured    Boolean       @default(false)
+  status      EventStatus   @default(PUBLISHED)
+  createdById String
+  createdBy   User          @relation("EventCreator", fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  registrations EventRegistration[]
+
+  @@index([category, status])
+  @@index([startDate])
+  @@map("events")
+}
+
+model EventRegistration {
+  id              String              @id @default(uuid())
+  eventId         String
+  event           Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          RegistrationStatus  @default(PENDING)
+  paymentStatus   PaymentStatus       @default(UNPAID)
+  amountPaidKes   Int                 @default(0)
+  transactionRef  String?
+  registeredAt    DateTime            @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@map("event_registrations")
+}
+
+// ──────────────────────────────────────────────
+// Charity Campaigns & Donations
+// ──────────────────────────────────────────────
+
+model Campaign {
+  id          String         @id @default(uuid())
+  slug        String         @unique
+  title       String
+  summary     String
+  description String
+  coverImage  String
+  beneficiary String
+  goalKes     Int
+  raisedKes   Int            @default(0)
+  status      CampaignStatus @default(ACTIVE)
+  createdById String
+  createdBy   User           @relation("CampaignCreator", fields: [createdById], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  donations Donation[]
+
+  @@index([status])
+  @@map("campaigns")
+}
+
+model Donation {
+  id            String        @id @default(uuid())
+  campaignId    String
+  campaign      Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
+  donorName     String
+  donorEmail    String
+  amountKes     Int
+  method        PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  transactionRef String?
+  message       String?
+  anonymous     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+
+  @@index([campaignId])
+  @@index([userId])
+  @@map("donations")
+}
+
+// ──────────────────────────────────────────────
+// Content: Blog, Portfolio, Resources, Testimonials, FAQ, Team
+// ──────────────────────────────────────────────
+
+model BlogPost {
+  id                  String     @id @default(uuid())
+  slug                String     @unique
+  title               String
+  excerpt             String
+  content             String
+  coverImage          String
+  category            String
+  status              PostStatus @default(DRAFT)
+  readingTimeMinutes  Int        @default(5)
+  authorId            String
+  author              User       @relation(fields: [authorId], references: [id])
+  publishedAt         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  @@index([status])
+  @@map("blog_posts")
+}
+
+model PortfolioItem {
+  id        String            @id @default(uuid())
+  title     String
+  category  PortfolioCategory
+  image     String
+  location  String
+  year      String
+  createdAt DateTime          @default(now())
+
+  @@map("portfolio_items")
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  avatarUrl String
+  quote     String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("testimonials")
+}
+
+model FaqItem {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  category  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("faq_items")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  bio       String
+  avatarUrl String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("team_members")
+}
+
+model Resource {
+  id            String       @id @default(uuid())
+  title         String
+  description   String
+  type          ResourceType
+  fileUrl       String
+  fileSizeKb    Int
+  category      String
+  downloadCount Int          @default(0)
+  createdAt     DateTime     @default(now())
+
+  @@map("resources")
+}
+
+// ──────────────────────────────────────────────
+// Community
+// ──────────────────────────────────────────────
+
+model CommunityGroup {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  memberCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("community_groups")
+}
+
+model CommunityApplication {
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation("CommunityApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  roleApplied    String
+  motivation     String
+  status         ApplicationStatus  @default(PENDING)
+  reviewedById   String?
+  reviewedBy     User?              @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
+  createdAt      DateTime           @default(now())
+  reviewedAt     DateTime?
+
+  @@index([status])
+  @@map("community_applications")
+}
+
+// ──────────────────────────────────────────────
+// Engagement: Newsletter, Contact, Notifications
+// ──────────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  @@map("newsletter_subscribers")
+}
+
+model ContactMessage {
+  id        String        @id @default(uuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    ContactStatus @default(NEW)
+  createdAt DateTime      @default(now())
+
+  @@map("contact_messages")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@map("notifications")
+}

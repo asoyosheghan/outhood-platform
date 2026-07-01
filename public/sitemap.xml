@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://outhood.africa/</loc><priority>1.0</priority></url>
+  <url><loc>https://outhood.africa/about</loc><priority>0.8</priority></url>
+  <url><loc>https://outhood.africa/services</loc><priority>0.8</priority></url>
+  <url><loc>https://outhood.africa/portfolio</loc><priority>0.7</priority></url>
+  <url><loc>https://outhood.africa/blog</loc><priority>0.7</priority></url>
+  <url><loc>https://outhood.africa/resources</loc><priority>0.6</priority></url>
+  <url><loc>https://outhood.africa/community</loc><priority>0.7</priority></url>
+  <url><loc>https://outhood.africa/contact</loc><priority>0.6</priority></url>
+  <url><loc>https://outhood.africa/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://outhood.africa/privacy</loc><priority>0.3</priority></url>
+  <url><loc>https://outhood.africa/terms</loc><priority>0.3</priority></url>
+</urlset>
