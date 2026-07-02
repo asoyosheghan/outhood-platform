@@ -23,7 +23,16 @@ app.use(
 
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: (origin, callback) => {
+      const allowedOrigins = [env.clientUrl, "http://localhost:3000"];
+      const isVercelPreview = /^https:\/\/outhood-platform-[a-z0-9]+-shevin-tech\.vercel\.app$/.test(origin || "");
+
+      if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
