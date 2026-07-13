@@ -3,7 +3,6 @@
   <url><loc>https://outhood-platform.vercel.app/</loc><priority>1.0</priority></url>
   <url><loc>https://outhood-platform.vercel.app/about</loc><priority>0.8</priority></url>
   <url><loc>https://outhood-platform.vercel.app/services</loc><priority>0.8</priority></url>
-  <url><loc>https://outhood-platform.vercel.app/explore</loc><priority>0.8</priority></url>
   <url><loc>https://outhood-platform.vercel.app/portfolio</loc><priority>0.7</priority></url>
   <url><loc>https://outhood-platform.vercel.app/blog</loc><priority>0.7</priority></url>
   <url><loc>https://outhood-platform.vercel.app/resources</loc><priority>0.6</priority></url>
