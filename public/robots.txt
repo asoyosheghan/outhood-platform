@@ -3,4 +3,4 @@ Allow: /
 Disallow: /dashboard
 Disallow: /admin
 
-Sitemap: https://outhood.africa/sitemap.xml
+Sitemap: https://outhood-platform.vercel.app/sitemap.xml
